@@ -1,4 +1,4 @@
-package example.kacyn.com.caltrainplus.data;
+package example.kacyn.com.caltrainplus;
 
 /**
  * Created by kacyn on 12/19/15.
@@ -22,12 +22,12 @@ public class Utility {
             case 70081: //Burlingame
                 return 37.580246;
             case 70091: //San Mateo
-                return 37.567616;
+                return 37.5676202;
             case 70101: //Hayward Park
                 return 37.5525849;
             case 70111: //Hillsdale
                 return 37.538995;
-            case 70112: //Belmont
+            case 70121: //Belmont
                 return 37.520713;
             case 70131: //San Carlos
                 return 37.507621;
@@ -77,13 +77,13 @@ public class Utility {
             case 70081: //Burlingame
                 return -122.345145;
             case 70091: //San Mateo
-                return -122.4120296;
+                return -122.3254387;
             case 70101: //Hayward Park
                 return -122.3090312;
             case 70111: //Hillsdale
                 return -122.2979067;
-            case 70112: //Belmont
-                return -122.275574;
+            case 70121: //Belmont
+                return -122.2777627;
             case 70131: //San Carlos
                 return -122.260396;
             case 70141: //Redwood City

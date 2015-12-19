@@ -1,6 +1,7 @@
 package example.kacyn.com.caltrainplus;
 
 import android.content.ContentValues;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
@@ -25,7 +26,6 @@ import java.net.URL;
 import java.util.Vector;
 
 import example.kacyn.com.caltrainplus.data.StationContract.StationEntry;
-import example.kacyn.com.caltrainplus.data.Utility;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -128,6 +128,7 @@ public class MainActivity extends AppCompatActivity {
 
             return null;
         }
+
     }
 
     void parseStationXmlResponse(String stationXmlResponse)
@@ -178,5 +179,7 @@ public class MainActivity extends AppCompatActivity {
             inserted = this.getContentResolver().bulkInsert(StationEntry.CONTENT_URI, cvArray);
         }
         Log.v(TAG, "End document.  " + inserted + " inserted");
+
+        startActivity(new Intent(this, MapsActivity.class));
     }
 }

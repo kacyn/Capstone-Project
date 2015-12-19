@@ -3,6 +3,8 @@ package example.kacyn.com.caltrainplus;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
@@ -23,7 +25,11 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.ui.IconGenerator;
 
+
 import java.util.ArrayList;
+
+import example.kacyn.com.caltrainplus.data.StationContract.StationEntry;
+import example.kacyn.com.caltrainplus.data.StationDbHelper;
 
 public class MapsActivity extends AppCompatActivity implements
         GoogleMap.OnMyLocationButtonClickListener,
@@ -35,10 +41,26 @@ public class MapsActivity extends AppCompatActivity implements
 
     private boolean mPermissionDenied = false;
 
+    StationDbHelper mDbHelper;
+
+    private static String[] STATION_COLUMNS = {
+            StationEntry._ID,
+            StationEntry.COLUMN_STATION_NAME,
+            StationEntry.COLUMN_STATION_LAT,
+            StationEntry.COLUMN_STATION_LNG
+    };
+
+    static final int COL_STATION_ID = 0;
+    static final int COL_STATION_NAME = 1;
+    static final int COL_STATION_LAT = 2;
+    static final int COL_STATION_LNG = 3;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
+        mDbHelper = new StationDbHelper(this);
 
         setUpMapIfNeeded();
     }
@@ -86,7 +108,24 @@ public class MapsActivity extends AppCompatActivity implements
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap() {
-        mMap.addMarker(new MarkerOptions().position(new LatLng(37.443777, -122.1649696)).title("Palo Alto"));
+
+        SQLiteDatabase db = mDbHelper.getReadableDatabase();
+
+        Cursor c = db.query(StationEntry.TABLE_NAME,
+                STATION_COLUMNS,
+                null,
+                null,
+                null,
+                null,
+                null);
+
+        while (c.moveToNext()) {
+            double lat = c.getDouble(COL_STATION_LAT);
+            double lng = c.getDouble(COL_STATION_LNG);
+            String stationName = c.getString(COL_STATION_NAME);
+
+            mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lng)).title(stationName));
+        }
 
     }
 
