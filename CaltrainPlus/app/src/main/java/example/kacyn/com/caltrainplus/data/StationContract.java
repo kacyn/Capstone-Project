@@ -35,7 +35,7 @@ public class StationContract {
             return ContentUris.withAppendedId(CONTENT_URI, id);
         }
 
-        public static int getIdFromUri(Uri uri) {
+        public static int getCodeFromUri(Uri uri) {
             return Integer.parseInt(uri.getPathSegments().get(1));
         }
     }

@@ -34,6 +34,7 @@ public class StationDbHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-
+        db.execSQL("DROP TABLE IF EXISTS " + StationEntry.TABLE_NAME);
+        onCreate(db);
     }
 }
