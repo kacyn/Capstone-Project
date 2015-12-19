@@ -52,6 +52,11 @@
                 <!--android:name="android.support.PARENT_ACTIVITY"-->
                 <!--android:value="example.kacyn.com.caltrainplus.MainActivity" />-->
         </activity>
+
+        <provider
+            android:authorities="example.kacyn.com.caltrainplus"
+            android:name=".data.StationProvider"/>
+
     </application>
 
 </manifest>

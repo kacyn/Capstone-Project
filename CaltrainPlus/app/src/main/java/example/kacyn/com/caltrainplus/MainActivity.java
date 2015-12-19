@@ -1,39 +1,33 @@
 package example.kacyn.com.caltrainplus;
 
-import android.app.Activity;
-import android.app.DownloadManager;
 import android.content.ContentValues;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Looper;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import com.squareup.okhttp.Call;
-import com.squareup.okhttp.Callback;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
-
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.StringReader;
-import java.lang.ref.WeakReference;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.ProtocolException;
 import java.net.URL;
 import java.util.Vector;
-import java.util.logging.Handler;
 
 import example.kacyn.com.caltrainplus.data.StationContract.StationEntry;
 import example.kacyn.com.caltrainplus.data.Utility;
 
-public class MainActivity extends AppCompatActivity implements HttpCallback {
+public class MainActivity extends AppCompatActivity {
 
     public static String TAG = MainActivity.class.getSimpleName();
 
@@ -42,7 +36,8 @@ public class MainActivity extends AppCompatActivity implements HttpCallback {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        loadStationData(this);
+//        loadStationData(this);
+        new FetchStationData().execute();
     }
 
     @Override
@@ -67,64 +62,72 @@ public class MainActivity extends AppCompatActivity implements HttpCallback {
         return super.onOptionsItemSelected(item);
     }
 
-    void loadStationData (Activity activityIn) {
-        final WeakReference<Activity> activityWeakReference = new WeakReference<>(activityIn);
+    public class FetchStationData extends AsyncTask<Void, Void, Void> {
 
-        Log.v(TAG, "in load station data");
+        @Override
+        protected Void doInBackground(Void... params) {
 
-        OkHttpClient client = new OkHttpClient();
+            HttpURLConnection urlConnection = null;
+            BufferedReader reader = null;
 
-        URL url = null;
+            URL url = null;
+            String resultString;
 
-        final String STATION_BASE_URL =
-                "http://services.my511.org/Transit2.0/";
-        final String STOPS_FOR_ROUTE = "GetStopsForRoute.aspx";
-        final String API_PARAM_TOKEN = "token";
-        final String ROUTE_IDF = "routeIDF";
+            try {
+                final String STATION_BASE_URL =
+                        "http://services.my511.org/Transit2.0/";
+                final String STOPS_FOR_ROUTE = "GetStopsForRoute.aspx";
+                final String API_PARAM_TOKEN = "token";
+                final String ROUTE_IDF = "routeIDF";
 
 
-        Uri uri = Uri.parse(STATION_BASE_URL).buildUpon()
-                .appendPath(STOPS_FOR_ROUTE)
-                .appendQueryParameter(API_PARAM_TOKEN, getString(R.string.api_key_511))
-                .appendQueryParameter(ROUTE_IDF, "Caltrain~LOCAL~NB")
-                .build();
+                Uri uri = Uri.parse(STATION_BASE_URL).buildUpon()
+                        .appendPath(STOPS_FOR_ROUTE)
+                        .appendQueryParameter(API_PARAM_TOKEN, getString(R.string.api_key_511))
+                        .appendQueryParameter(ROUTE_IDF, "Caltrain~LOCAL~NB")
+                        .build();
 
-        try {
-            url = new URL(uri.toString());
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
+                try {
+                    url = new URL(uri.toString());
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
+
+                urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.setRequestMethod("GET");
+                urlConnection.connect();
+
+                InputStream inputStream = urlConnection.getInputStream();
+                StringBuffer buffer = new StringBuffer();
+
+                if(inputStream == null) {
+                    return null;
+                }
+
+                reader = new BufferedReader(new InputStreamReader(inputStream));
+
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    buffer.append(line + "\n");
+                }
+
+                if (buffer.length() == 0) {
+                    return null;
+                }
+
+                resultString = buffer.toString();
+                parseStationXmlResponse(resultString);
+            } catch (ProtocolException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (XmlPullParserException e) {
+                e.printStackTrace();
+            }
+
+
+            return null;
         }
-
-        Log.v(TAG, "in load station data. url: " + url);
-
-        Request request = new Request.Builder()
-                .url(url)
-                .build();
-
-        Call call = client.newCall(request);
-        call.enqueue(new Callback(){
-
-            @Override
-            public void onFailure(Request request, IOException e){
-
-                Log.e(TAG, "Failed to execute " + request + " Exception " + e);
-            }
-
-            @Override
-            public void onResponse(Response response) throws IOException {
-                if(!response.isSuccessful()) {
-                    throw new IOException("Unexpected code " + response);
-                }
-
-                Activity activity = activityWeakReference.get();
-
-                if(activity != null) {
-                    activity.onSuccess(response);
-                }
-            }
-
-        });
-
     }
 
     void parseStationXmlResponse(String stationXmlResponse)
@@ -175,19 +178,5 @@ public class MainActivity extends AppCompatActivity implements HttpCallback {
             inserted = this.getContentResolver().bulkInsert(StationEntry.CONTENT_URI, cvArray);
         }
         Log.v(TAG, "End document.  " + inserted + " inserted");
-    }
-
-    @Override
-    public void onSuccess(Response response) {
-        try {
-
-            String responseString = response.body().string();
-            parseStationXmlResponse(responseString);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (XmlPullParserException e) {
-            e.printStackTrace();
-        }
     }
 }

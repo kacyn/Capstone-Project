@@ -11,7 +11,7 @@ import example.kacyn.com.caltrainplus.data.StationContract.StationEntry;
  */
 public class StationDbHelper extends SQLiteOpenHelper {
 
-    private static final int DATABASE_VERSION = 0;
+    private static final int DATABASE_VERSION = 1;
     static final String DATABASE_NAME = "station.db";
 
     public StationDbHelper(Context context) {
