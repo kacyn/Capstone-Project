@@ -11,7 +11,7 @@ import example.kacyn.com.caltrainplus.data.StationContract.StationEntry;
  */
 public class StationDbHelper extends SQLiteOpenHelper {
 
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
     static final String DATABASE_NAME = "station.db";
 
     public StationDbHelper(Context context) {
@@ -23,10 +23,10 @@ public class StationDbHelper extends SQLiteOpenHelper {
 
         final String SQL_CREATE_STATION_TABLE = "CREATE TABLE " + StationEntry.TABLE_NAME + " (" +
                 StationEntry._ID + " INTEGER PRIMARY KEY, " +
-                StationEntry.COLUMN_STATION_NAME + " TEXT NOT NULL, " +
-                StationEntry.COLUMN_STATION_CODE + " INTEGER NOT NULL, " +
-                StationEntry.COLUMN_STATION_LAT + " REAL NOT NULL, " +
-                StationEntry.COLUMN_STATION_LNG + " REAL NOT NULL " +
+                StationEntry.COLUMN_STATION_NAME + " TEXT UNIQUE NOT NULL, " +
+                StationEntry.COLUMN_STATION_CODE + " INTEGER UNIQUE NOT NULL, " +
+                StationEntry.COLUMN_STATION_LAT + " REAL UNIQUE NOT NULL, " +
+                StationEntry.COLUMN_STATION_LNG + " REAL UNIQUE NOT NULL " +
                 ");";
 
         db.execSQL(SQL_CREATE_STATION_TABLE);

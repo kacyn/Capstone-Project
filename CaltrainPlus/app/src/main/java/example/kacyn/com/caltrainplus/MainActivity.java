@@ -1,7 +1,12 @@
 package example.kacyn.com.caltrainplus;
 
+import android.app.Activity;
+import android.app.LoaderManager;
 import android.content.ContentValues;
+import android.content.CursorLoader;
 import android.content.Intent;
+import android.content.Loader;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
@@ -9,6 +14,12 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.SimpleCursorAdapter;
+import android.widget.Spinner;
+import android.widget.Toast;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -27,17 +38,38 @@ import java.util.Vector;
 
 import example.kacyn.com.caltrainplus.data.StationContract.StationEntry;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
     public static String TAG = MainActivity.class.getSimpleName();
+
+    private static final int STATION_LOADER = 0;
+
+    private static String[] STATION_COLUMNS = {
+            StationEntry._ID,
+            StationEntry.COLUMN_STATION_NAME
+    };
+
+    static final int COL_STATION_ID = 0;
+    static final int COL_STATION_NAME = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Button button = (Button) findViewById(R.id.maps_button);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.v(TAG, "you clicked the button");
+//                startActivity(new Intent(MainActivity.class, MapsActivity.class));
+            }
+        });
+
 //        loadStationData(this);
         new FetchStationData().execute();
+
+        getLoaderManager().initLoader(STATION_LOADER, null, this);
     }
 
     @Override
@@ -61,6 +93,49 @@ public class MainActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        return new CursorLoader(this,
+                StationEntry.CONTENT_URI,
+                STATION_COLUMNS,
+                null,
+                null,
+                null);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        SimpleCursorAdapter mSpinnerAdapter = new SimpleCursorAdapter(
+                this,
+                android.R.layout.simple_spinner_item,
+                cursor,
+                new String[]{StationEntry.COLUMN_STATION_NAME},
+                new int[]{android.R.id.text1}
+                );
+        mSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        Spinner stationSpinner = (Spinner) findViewById(R.id.station_spinner);
+        stationSpinner.setAdapter(mSpinnerAdapter);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+
+    }
+
+    public class SpinnerActivity extends Activity implements AdapterView.OnItemSelectedListener {
+
+        @Override
+        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+            parent.getItemAtPosition(position);
+        }
+
+        @Override
+        public void onNothingSelected(AdapterView<?> parent) {
+
+        }
+    }
+
 
     public class FetchStationData extends AsyncTask<Void, Void, Void> {
 
@@ -180,6 +255,6 @@ public class MainActivity extends AppCompatActivity {
         }
         Log.v(TAG, "End document.  " + inserted + " inserted");
 
-        startActivity(new Intent(this, MapsActivity.class));
+
     }
 }
