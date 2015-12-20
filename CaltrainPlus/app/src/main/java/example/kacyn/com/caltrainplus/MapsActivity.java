@@ -1,11 +1,15 @@
 package example.kacyn.com.caltrainplus;
 
 import android.Manifest;
+import android.app.LoaderManager;
 import android.content.Context;
+import android.content.CursorLoader;
+import android.content.Loader;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -13,6 +17,7 @@ import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -33,7 +38,10 @@ import example.kacyn.com.caltrainplus.data.StationDbHelper;
 
 public class MapsActivity extends AppCompatActivity implements
         GoogleMap.OnMyLocationButtonClickListener,
-        ActivityCompat.OnRequestPermissionsResultCallback {
+        ActivityCompat.OnRequestPermissionsResultCallback,
+        LoaderManager.LoaderCallbacks<Cursor> {
+
+    private static final String TAG = MapsActivity.class.getSimpleName();
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
 
@@ -42,6 +50,8 @@ public class MapsActivity extends AppCompatActivity implements
     private boolean mPermissionDenied = false;
 
     StationDbHelper mDbHelper;
+
+    private static final int STATION_LOADER = 0;
 
     private static String[] STATION_COLUMNS = {
             StationEntry._ID,
@@ -71,21 +81,6 @@ public class MapsActivity extends AppCompatActivity implements
         setUpMapIfNeeded();
     }
 
-    /**
-     * Sets up the map if it is possible to do so (i.e., the Google Play services APK is correctly
-     * installed) and the map has not already been instantiated.. This will ensure that we only ever
-     * call {@link #setUpMap()} once when {@link #mMap} is not null.
-     * <p>
-     * If it isn't installed {@link SupportMapFragment} (and
-     * {@link com.google.android.gms.maps.MapView MapView}) will show a prompt for the user to
-     * install/update the Google Play services APK on their device.
-     * <p>
-     * A user can return to this FragmentActivity after following the prompt and correctly
-     * installing/updating/enabling the Google Play services. Since the FragmentActivity may not
-     * have been completely destroyed during this process (it is likely that it would only be
-     * stopped or paused), {@link #onCreate(Bundle)} may not be called again so we should call this
-     * method in {@link #onResume()} to guarantee that it will be called.
-     */
     private void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the map.
         if (mMap == null) {
@@ -96,37 +91,9 @@ public class MapsActivity extends AppCompatActivity implements
             if (mMap != null) {
                 mMap.setOnMyLocationButtonClickListener(this);
                 enableMyLocation();
-                setUpMap();
+                getLoaderManager().initLoader(STATION_LOADER, null, this);
             }
         }
-    }
-
-    /**
-     * This is where we can add markers or lines, add listeners or move the camera. In this case, we
-     * just add a marker near Africa.
-     * <p>
-     * This should only be called once and when we are sure that {@link #mMap} is not null.
-     */
-    private void setUpMap() {
-
-        SQLiteDatabase db = mDbHelper.getReadableDatabase();
-
-        Cursor c = db.query(StationEntry.TABLE_NAME,
-                STATION_COLUMNS,
-                null,
-                null,
-                null,
-                null,
-                null);
-
-        while (c.moveToNext()) {
-            double lat = c.getDouble(COL_STATION_LAT);
-            double lng = c.getDouble(COL_STATION_LNG);
-            String stationName = c.getString(COL_STATION_NAME);
-
-            mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lng)).title(stationName));
-        }
-
     }
 
     @Override
@@ -181,6 +148,34 @@ public class MapsActivity extends AppCompatActivity implements
     private void showMissingPermissionError() {
         PermissionUtils.PermissionDeniedDialog
                 .newInstance(true).show(getSupportFragmentManager(), "dialog");
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        return new CursorLoader(this,
+                StationEntry.CONTENT_URI,
+                STATION_COLUMNS,
+                null,
+                null,
+                null);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor c) {
+        while (c.moveToNext()) {
+            double lat = c.getDouble(COL_STATION_LAT);
+            double lng = c.getDouble(COL_STATION_LNG);
+            String stationName = c.getString(COL_STATION_NAME);
+
+            Log.v(TAG, "lat: " + lat + " long: " + lng + " stationName: " + stationName);
+
+            mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lng)).title(stationName));
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+
     }
 
 //    //make a separate asynctask to load the markers in a background thread
