@@ -57,6 +57,8 @@
             android:authorities="example.kacyn.com.caltrainplus"
             android:name=".data.StationProvider"/>
 
+        <service android:name=".GeofenceService"/>
+
     </application>
 
 </manifest>

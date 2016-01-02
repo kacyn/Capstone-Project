@@ -2,25 +2,33 @@ package example.kacyn.com.caltrainplus;
 
 import android.Manifest;
 import android.app.LoaderManager;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.CursorLoader;
+import android.content.Intent;
 import android.content.Loader;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import com.google.android.gms.location.Geofence;
+import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -44,12 +52,18 @@ public class MapsActivity extends AppCompatActivity implements
     private static final String TAG = MapsActivity.class.getSimpleName();
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
+    private static final int GEOFENCE_RADIUS = 5;
+    private static final int GEOFENCE_EXPIRATION_MS = 5 * 60 * 60 * 1000; //to expire in 5 hours
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
 
     private boolean mPermissionDenied = false;
 
     StationDbHelper mDbHelper;
+    SharedPreferences mPrefs;
+    String mDestination;
+    PendingIntent mGeofencePendingIntent;
+    Geofence mGeofence;
 
     private static final int STATION_LOADER = 0;
 
@@ -70,6 +84,9 @@ public class MapsActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
+
+        mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+        mDestination = mPrefs.getString(getString(R.string.station_key), "");
         mDbHelper = new StationDbHelper(this);
 
         setUpMapIfNeeded();
@@ -167,9 +184,45 @@ public class MapsActivity extends AppCompatActivity implements
             double lng = c.getDouble(COL_STATION_LNG);
             String stationName = c.getString(COL_STATION_NAME);
 
-            Log.v(TAG, "lat: " + lat + " long: " + lng + " stationName: " + stationName);
+//            Log.v(TAG, "lat: " + lat + " long: " + lng + " stationName: " + stationName);
 
             mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lng)).title(stationName));
+
+            if(stationName.equals(mDestination)) {
+                Log.v(TAG, "destination: " + mDestination);
+                addGeofence(lat, lng);
+            }
+        }
+    }
+
+    private void addGeofence(double lat, double lng) {
+        mGeofence = new Geofence.Builder()
+                .setRequestId(getString(R.string.geofence_request_id))
+                .setCircularRegion(lat, lng, GEOFENCE_RADIUS)
+                .setExpirationDuration(GEOFENCE_EXPIRATION_MS)
+                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
+                .build();
+
+    }
+
+    private GeofencingRequest getGeofencingRequest(double lat, double lng){
+        GeofencingRequest.Builder geoRequestBuilder = new GeofencingRequest.Builder();
+
+        geoRequestBuilder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER);
+        geoRequestBuilder.addGeofence(mGeofence);
+
+        Log.v(TAG, "geofence created at lat: " + lat + " long: " + lng);
+
+        return geoRequestBuilder.build();
+    }
+
+    private PendingIntent getGeofencePendingIntent() {
+        if(mGeofencePendingIntent != null) {
+            return mGeofencePendingIntent;
+        }
+        else {
+            Intent intent = new Intent(this, GeofenceService.class);
+            return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         }
     }
 
@@ -177,6 +230,8 @@ public class MapsActivity extends AppCompatActivity implements
     public void onLoaderReset(Loader<Cursor> loader) {
 
     }
+
+
 
 //    //make a separate asynctask to load the markers in a background thread
 //    public class LoadMarkers extends AsyncTask<Void, Void, Void> {

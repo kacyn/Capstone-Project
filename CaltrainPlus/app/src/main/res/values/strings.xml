@@ -20,6 +20,16 @@
     <string name="enter_destination">Select destination station: </string>
     <string name="button_text">Begin trip!</string>
     <string name="arrival_notification_toggle">Arrival notification setting:</string>
-    <string name="notification_text">You are approaching your destination!</string>
+
+    <!-- Shared preferences -->
+    <string name="station_key">station_key</string>
+    <string name="notification_key">notification_key</string>
+
+    <!-- Intent key -->
+    <string name="geofence_location_key">geofence_location_key</string>
+    <string name="geofence_request_id">destination_request_id</string>
+
+    <!-- For notification -->
+    <string name="notification_title">Approaching destination:</string>
 
 </resources>

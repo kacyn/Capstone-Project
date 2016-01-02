@@ -6,9 +6,11 @@ import android.content.ContentValues;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -17,9 +19,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.SimpleCursorAdapter;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -52,17 +57,39 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     static final int COL_STATION_ID = 0;
     static final int COL_STATION_NAME = 1;
 
+    SharedPreferences mPrefs;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+
         Button button = (Button) findViewById(R.id.maps_button);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.v(TAG, "you clicked the button");
-//                startActivity(new Intent(MainActivity.class, MapsActivity.class));
+                startMapsActivity();
+            }
+        });
+
+        ToggleButton notificationButton = (ToggleButton) findViewById(R.id.notification_toggle);
+        notificationButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                SharedPreferences.Editor editor = mPrefs.edit();
+
+                if(isChecked) {
+                    editor.putBoolean(getString(R.string.notification_key), true);
+                    Log.v(TAG, "notifications on");
+                }
+                else {
+                    editor.putBoolean(getString(R.string.notification_key), false);
+                    Log.v(TAG, "notifications off");
+                }
+
+                editor.apply();
             }
         });
 
@@ -70,6 +97,13 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         new FetchStationData().execute();
 
         getLoaderManager().initLoader(STATION_LOADER, null, this);
+    }
+
+    void startMapsActivity() {
+//        Intent mapsIntent = new Intent(this, MapsActivity.class);
+//        mapsIntent.putExtra(getString(R.string.geofence_location_key), )
+
+        startActivity(new Intent(this, MapsActivity.class));
     }
 
     @Override
@@ -114,28 +148,30 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 new int[]{android.R.id.text1}
                 );
         mSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        Spinner stationSpinner = (Spinner) findViewById(R.id.station_spinner);
+        final Spinner stationSpinner = (Spinner) findViewById(R.id.station_spinner);
         stationSpinner.setAdapter(mSpinnerAdapter);
+        stationSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                TextView selectedView = (TextView) view.findViewById(android.R.id.text1);
+                String selectedStation = selectedView.getText().toString();
+
+                SharedPreferences.Editor editor = mPrefs.edit();
+                editor.putString(getString(R.string.station_key), selectedStation);
+                editor.apply();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
 
     }
-
-    public class SpinnerActivity extends Activity implements AdapterView.OnItemSelectedListener {
-
-        @Override
-        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-            parent.getItemAtPosition(position);
-        }
-
-        @Override
-        public void onNothingSelected(AdapterView<?> parent) {
-
-        }
-    }
-
 
     public class FetchStationData extends AsyncTask<Void, Void, Void> {
 
