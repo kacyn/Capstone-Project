@@ -13,6 +13,7 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
+import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
@@ -27,8 +28,14 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -47,23 +54,30 @@ import example.kacyn.com.caltrainplus.data.StationDbHelper;
 public class MapsActivity extends AppCompatActivity implements
         GoogleMap.OnMyLocationButtonClickListener,
         ActivityCompat.OnRequestPermissionsResultCallback,
-        LoaderManager.LoaderCallbacks<Cursor> {
+        LoaderManager.LoaderCallbacks<Cursor>,
+        GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener,
+        ResultCallback<Status> {
 
     private static final String TAG = MapsActivity.class.getSimpleName();
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private static final int GEOFENCE_RADIUS = 5;
     private static final int GEOFENCE_EXPIRATION_MS = 5 * 60 * 60 * 1000; //to expire in 5 hours
+    private static final int DEFAULT_ZOOM_LEVEL = 10;
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
 
     private boolean mPermissionDenied = false;
+
+    protected GoogleApiClient mGoogleApiClient;
 
     StationDbHelper mDbHelper;
     SharedPreferences mPrefs;
     String mDestination;
     PendingIntent mGeofencePendingIntent;
     Geofence mGeofence;
+    Location mLastLocation;
 
     private static final int STATION_LOADER = 0;
 
@@ -88,6 +102,12 @@ public class MapsActivity extends AppCompatActivity implements
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
         mDestination = mPrefs.getString(getString(R.string.station_key), "");
         mDbHelper = new StationDbHelper(this);
+
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
 
         setUpMapIfNeeded();
     }
@@ -231,6 +251,43 @@ public class MapsActivity extends AppCompatActivity implements
 
     }
 
+    @Override
+    protected void onStart() {
+        mGoogleApiClient.connect();
+        super.onStart();
+    }
+
+    @Override
+    protected void onStop() {
+        mGoogleApiClient.disconnect();
+        super.onStop();
+    }
+
+    @Override
+    public void onConnected(Bundle bundle) {
+        mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+
+        if (mLastLocation != null) {
+            //zoom to current location
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude()), DEFAULT_ZOOM_LEVEL));
+
+        }
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+
+    }
+
+    @Override
+    public void onResult(Status status) {
+
+    }
 
 
 //    //make a separate asynctask to load the markers in a background thread
