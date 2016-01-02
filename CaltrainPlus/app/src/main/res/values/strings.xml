@@ -3,6 +3,7 @@
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="action_share">Share</string>
     <string name="title_activity_maps">Caltrain Map</string>
 
     <string name="api_key_511">ac70d686-386f-4216-b615-3bf69d8fdc0f</string>

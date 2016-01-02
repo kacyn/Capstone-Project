@@ -5,6 +5,7 @@ import android.appwidget.AppWidgetProvider;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.widget.RemoteViews;
 
 /**
@@ -35,6 +36,8 @@ public class InfoWidget extends AppWidgetProvider {
     static void updateAppWidget(Context context, AppWidgetManager appWidgetManager,
                                 int appWidgetId) {
 
+
+        Log.v("Map", "widget updated");
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 

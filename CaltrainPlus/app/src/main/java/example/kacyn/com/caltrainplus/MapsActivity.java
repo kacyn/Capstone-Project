@@ -22,10 +22,16 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v4.app.NotificationCompat;
+import android.support.v7.widget.ShareActionProvider;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
+
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -87,6 +93,7 @@ public class MapsActivity extends AppCompatActivity implements
     double mDestinationLat;
     double mDestinationLng;
     float mDistancetoDestMiles;
+    ShareActionProvider mShareActionProvider;
 
     private static final int STATION_LOADER = 0;
 
@@ -366,7 +373,33 @@ public class MapsActivity extends AppCompatActivity implements
         Log.v(TAG, "location changed. lat: " + mLastLocation.getLatitude() + " long: " + mLastLocation.getLongitude() + " distance from dest in miles: " + mDistancetoDestMiles);
     }
 
-//    //make a separate asynctask to load the markers in a background thread
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_maps, menu);
+
+        MenuItem item = menu.findItem(R.id.action_share);
+        mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
+
+        if(mShareActionProvider != null) {
+            mShareActionProvider.setShareIntent(createShareIntent());
+            Log.v(TAG, "setting share intent");
+        }
+        else {
+            Log.v(TAG, "share action provider is null");
+        }
+
+        return true;
+    }
+
+    private Intent createShareIntent() {
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        shareIntent.setType("text/plain");
+        shareIntent.putExtra(Intent.EXTRA_TEXT, "I am currently " + mDistancetoDestMiles + " mi away from " + mDestination);
+        return shareIntent;
+    }
+
+    //    //make a separate asynctask to load the markers in a background thread
 //    public class LoadMarkers extends AsyncTask<Void, Void, Void> {
 //
 //        private Context mContext;
