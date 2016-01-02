@@ -25,6 +25,7 @@
     <string name="station_key">station_key</string>
     <string name="station_position_key">station_position_key</string>
     <string name="notification_key">notification_key</string>
+    <string name="distance_key">distance_key</string>
 
     <!-- Intent key -->
     <string name="geofence_location_key">geofence_location_key</string>
@@ -32,5 +33,10 @@
 
     <!-- For notification -->
     <string name="notification_title">Approaching destination:</string>
+
+    <!-- Widget -->
+    <string name="widget_dest">Destination: Mountain View Caltrain Station</string>
+    <string name="widget_distance">Distance away: 3.2 mi</string>
+    <string name="add_widget">Add widget</string>
 
 </resources>

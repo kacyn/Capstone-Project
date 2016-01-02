@@ -86,6 +86,7 @@ public class MapsActivity extends AppCompatActivity implements
     LocationRequest mLocationRequest;
     double mDestinationLat;
     double mDestinationLng;
+    float mDistancetoDestMiles;
 
     private static final int STATION_LOADER = 0;
 
@@ -356,7 +357,13 @@ public class MapsActivity extends AppCompatActivity implements
         float[] results = new float[1];
         Location.distanceBetween(mLastLocation.getLatitude(), mLastLocation.getLongitude(), mDestinationLat, mDestinationLng, results);
 
-        Log.v(TAG, "location changed. lat: " + mLastLocation.getLatitude() + " long: " + mLastLocation.getLongitude() + " distance from dest in meters: " + results[0]);
+        mDistancetoDestMiles = results[0]/1600;
+
+        SharedPreferences.Editor editor = mPrefs.edit();
+        editor.putFloat(getString(R.string.distance_key), mDistancetoDestMiles);
+        editor.apply();
+
+        Log.v(TAG, "location changed. lat: " + mLastLocation.getLatitude() + " long: " + mLastLocation.getLongitude() + " distance from dest in miles: " + mDistancetoDestMiles);
     }
 
 //    //make a separate asynctask to load the markers in a background thread
