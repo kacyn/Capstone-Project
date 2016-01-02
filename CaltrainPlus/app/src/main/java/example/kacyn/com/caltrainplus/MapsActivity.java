@@ -84,6 +84,8 @@ public class MapsActivity extends AppCompatActivity implements
     Geofence mGeofence;
     Location mLastLocation;
     LocationRequest mLocationRequest;
+    double mDestinationLat;
+    double mDestinationLng;
 
     private static final int STATION_LOADER = 0;
 
@@ -251,6 +253,8 @@ public class MapsActivity extends AppCompatActivity implements
             if(stationName.equals(mDestination)) {
                 Log.v(TAG, "destination: " + mDestination);
                 addGeofence(lat, lng);
+                mDestinationLat = lat;
+                mDestinationLng = lng;
 //                addGeofence(37.331687, -122.02646600);
             }
         }
@@ -348,7 +352,11 @@ public class MapsActivity extends AppCompatActivity implements
     @Override
     public void onLocationChanged(Location location) {
         mLastLocation = location;
-        Log.v(TAG, "location changed. lat: " + mLastLocation.getLatitude() + " long: " + mLastLocation.getLongitude());
+
+        float[] results = new float[1];
+        Location.distanceBetween(mLastLocation.getLatitude(), mLastLocation.getLongitude(), mDestinationLat, mDestinationLng, results);
+
+        Log.v(TAG, "location changed. lat: " + mLastLocation.getLatitude() + " long: " + mLastLocation.getLongitude() + " distance from dest in meters: " + results[0]);
     }
 
 //    //make a separate asynctask to load the markers in a background thread
