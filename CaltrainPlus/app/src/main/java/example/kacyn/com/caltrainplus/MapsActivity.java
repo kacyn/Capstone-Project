@@ -34,6 +34,8 @@ import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingRequest;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -57,7 +59,8 @@ public class MapsActivity extends AppCompatActivity implements
         LoaderManager.LoaderCallbacks<Cursor>,
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
-        ResultCallback<Status> {
+        ResultCallback<Status>,
+        LocationListener {
 
     private static final String TAG = MapsActivity.class.getSimpleName();
 
@@ -65,6 +68,8 @@ public class MapsActivity extends AppCompatActivity implements
     public static final float GEOFENCE_RADIUS_METERS = 1609; // 1 mile
     private static final int GEOFENCE_EXPIRATION_MS = 5 * 60 * 60 * 1000; //to expire in 5 hours
     private static final int DEFAULT_ZOOM_LEVEL = 10;
+    public static final long LOCATION_UPDATE_INTERVAL_MS = 10000;
+    public static final long FASTEST_LOCATION_UPDATE_INTERVAL_MS = LOCATION_UPDATE_INTERVAL_MS / 2;
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
 
@@ -78,6 +83,7 @@ public class MapsActivity extends AppCompatActivity implements
     PendingIntent mGeofencePendingIntent;
     Geofence mGeofence;
     Location mLastLocation;
+    LocationRequest mLocationRequest;
 
     private static final int STATION_LOADER = 0;
 
@@ -112,6 +118,8 @@ public class MapsActivity extends AppCompatActivity implements
                 .addApi(LocationServices.API)
                 .build();
 
+        createLocationRequest();
+
         setUpMapIfNeeded();
     }
 
@@ -119,6 +127,35 @@ public class MapsActivity extends AppCompatActivity implements
     protected void onResume() {
         super.onResume();
         setUpMapIfNeeded();
+
+        if (mGoogleApiClient.isConnected()) {
+            startLocationUpdates();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Stop location updates to save battery, but don't disconnect the GoogleApiClient object.
+        if (mGoogleApiClient.isConnected()) {
+            stopLocationUpdates();
+        }
+    }
+
+    protected void startLocationUpdates() {
+        Log.v(TAG, "starting location updates");
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+    }
+
+    protected void stopLocationUpdates() {
+        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+    }
+
+    protected void createLocationRequest() {
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(LOCATION_UPDATE_INTERVAL_MS);
+        mLocationRequest.setFastestInterval(FASTEST_LOCATION_UPDATE_INTERVAL_MS);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
 
     private void setUpMapIfNeeded() {
@@ -278,6 +315,8 @@ public class MapsActivity extends AppCompatActivity implements
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude()), DEFAULT_ZOOM_LEVEL));
         }
 
+        startLocationUpdates();
+
         PendingIntent pendingIntent = getGeofencePendingIntent();
 
         if(pendingIntent == null) {
@@ -306,6 +345,11 @@ public class MapsActivity extends AppCompatActivity implements
         if(status.isSuccess()) Log.v(TAG, "geofence successfully created");
     }
 
+    @Override
+    public void onLocationChanged(Location location) {
+        mLastLocation = location;
+        Log.v(TAG, "location changed. lat: " + mLastLocation.getLatitude() + " long: " + mLastLocation.getLongitude());
+    }
 
 //    //make a separate asynctask to load the markers in a background thread
 //    public class LoadMarkers extends AsyncTask<Void, Void, Void> {
