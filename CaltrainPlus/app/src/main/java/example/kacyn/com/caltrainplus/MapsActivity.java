@@ -62,7 +62,7 @@ public class MapsActivity extends AppCompatActivity implements
     private static final String TAG = MapsActivity.class.getSimpleName();
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
-    private static final int GEOFENCE_RADIUS = 5;
+    public static final float GEOFENCE_RADIUS_METERS = 1609; // 1 mile
     private static final int GEOFENCE_EXPIRATION_MS = 5 * 60 * 60 * 1000; //to expire in 5 hours
     private static final int DEFAULT_ZOOM_LEVEL = 10;
 
@@ -102,6 +102,9 @@ public class MapsActivity extends AppCompatActivity implements
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
         mDestination = mPrefs.getString(getString(R.string.station_key), "");
         mDbHelper = new StationDbHelper(this);
+
+        //initialize pending intent
+        mGeofencePendingIntent = null;
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
@@ -211,27 +214,29 @@ public class MapsActivity extends AppCompatActivity implements
             if(stationName.equals(mDestination)) {
                 Log.v(TAG, "destination: " + mDestination);
                 addGeofence(lat, lng);
+//                addGeofence(37.331687, -122.02646600);
             }
         }
     }
 
     private void addGeofence(double lat, double lng) {
+
+        Log.v(TAG, "geofence created at lat: " + lat + " long: " + lng);
+
         mGeofence = new Geofence.Builder()
                 .setRequestId(getString(R.string.geofence_request_id))
-                .setCircularRegion(lat, lng, GEOFENCE_RADIUS)
+                .setCircularRegion(lat, lng, GEOFENCE_RADIUS_METERS)
                 .setExpirationDuration(GEOFENCE_EXPIRATION_MS)
                 .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
                 .build();
 
     }
 
-    private GeofencingRequest getGeofencingRequest(double lat, double lng){
+    private GeofencingRequest getGeofencingRequest(){
         GeofencingRequest.Builder geoRequestBuilder = new GeofencingRequest.Builder();
 
         geoRequestBuilder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER);
         geoRequestBuilder.addGeofence(mGeofence);
-
-        Log.v(TAG, "geofence created at lat: " + lat + " long: " + lng);
 
         return geoRequestBuilder.build();
     }
@@ -240,10 +245,10 @@ public class MapsActivity extends AppCompatActivity implements
         if(mGeofencePendingIntent != null) {
             return mGeofencePendingIntent;
         }
-        else {
-            Intent intent = new Intent(this, GeofenceService.class);
-            return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        }
+
+        Log.v(TAG, "Creating new geofence service");
+        Intent intent = new Intent(this, GeofenceService.class);
+        return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
     @Override
@@ -268,10 +273,22 @@ public class MapsActivity extends AppCompatActivity implements
         mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
 
         if (mLastLocation != null) {
+            Log.v(TAG, "current location.  lat: " + mLastLocation.getLatitude() + " long: " + mLastLocation.getLongitude());
             //zoom to current location
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude()), DEFAULT_ZOOM_LEVEL));
-
         }
+
+        PendingIntent pendingIntent = getGeofencePendingIntent();
+
+        if(pendingIntent == null) {
+            Log.v(TAG, "pending intent is null ");
+        }
+
+        LocationServices.GeofencingApi.addGeofences(
+                mGoogleApiClient,
+                getGeofencingRequest(),
+                getGeofencePendingIntent())
+                .setResultCallback(this);
     }
 
     @Override
@@ -286,7 +303,7 @@ public class MapsActivity extends AppCompatActivity implements
 
     @Override
     public void onResult(Status status) {
-
+        if(status.isSuccess()) Log.v(TAG, "geofence successfully created");
     }
 
 

@@ -23,6 +23,7 @@
 
     <!-- Shared preferences -->
     <string name="station_key">station_key</string>
+    <string name="station_position_key">station_position_key</string>
     <string name="notification_key">notification_key</string>
 
     <!-- Intent key -->

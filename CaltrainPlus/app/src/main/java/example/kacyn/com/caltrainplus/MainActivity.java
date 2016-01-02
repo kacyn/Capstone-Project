@@ -58,6 +58,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     static final int COL_STATION_NAME = 1;
 
     SharedPreferences mPrefs;
+    Spinner mStationSpinner;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,6 +93,31 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 editor.apply();
             }
         });
+
+        mStationSpinner = (Spinner) findViewById(R.id.station_spinner);
+
+        if(mStationSpinner != null) {
+            mStationSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                    TextView selectedView = (TextView) view.findViewById(android.R.id.text1);
+                    String selectedStation = selectedView.getText().toString();
+
+                    SharedPreferences.Editor editor = mPrefs.edit();
+                    editor.putString(getString(R.string.station_key), selectedStation);
+                    editor.putInt(getString(R.string.station_position_key), position);
+                    editor.apply();
+                }
+
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) {
+
+                }
+            });
+
+        }
+
+
 
 //        loadStationData(this);
         new FetchStationData().execute();
@@ -148,24 +174,15 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 new int[]{android.R.id.text1}
                 );
         mSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        final Spinner stationSpinner = (Spinner) findViewById(R.id.station_spinner);
-        stationSpinner.setAdapter(mSpinnerAdapter);
-        stationSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                TextView selectedView = (TextView) view.findViewById(android.R.id.text1);
-                String selectedStation = selectedView.getText().toString();
 
-                SharedPreferences.Editor editor = mPrefs.edit();
-                editor.putString(getString(R.string.station_key), selectedStation);
-                editor.apply();
-            }
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
+        mStationSpinner.setAdapter(mSpinnerAdapter);
 
-            }
-        });
+        int selectedPos = mPrefs.getInt(getString(R.string.station_position_key), -1);
+
+        if(selectedPos != -1) {
+            mStationSpinner.setSelection(selectedPos);
+        }
     }
 
     @Override

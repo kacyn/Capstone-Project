@@ -22,28 +22,34 @@ public class GeofenceService extends IntentService {
     public static final String TAG = GeofenceService.class.getSimpleName();
     SharedPreferences mPrefs;
 
-    public GeofenceService() {
-        // Use the TAG to name the worker thread.
+    public GeofenceService(){
         super(TAG);
-
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
 
+        Log.v(TAG, "service created");
+
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
     }
 
     @Override
     protected void onHandleIntent(Intent intent) {
+
+        Log.v(TAG, "intent received");
+
         GeofencingEvent geofencingEvent = GeofencingEvent.fromIntent(intent);
 
         // Get the transition type.
         int geofenceTransition = geofencingEvent.getGeofenceTransition();
 
+        sendNotification();
+
         // Test that the reported transition was of interest.
         if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER) {
+            Log.v(TAG, "region entered");
             // Send notification
             sendNotification();
         }
