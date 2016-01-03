@@ -15,7 +15,7 @@ import com.google.android.gms.location.GeofencingEvent;
 import java.util.List;
 
 /**
- * Created by kacyn on 12/20/15.
+ * Created by kacyn on 12/20/15.  Service to handle geofence entered events
  */
 public class GeofenceService extends IntentService {
 
@@ -30,16 +30,11 @@ public class GeofenceService extends IntentService {
     public void onCreate() {
         super.onCreate();
 
-        Log.v(TAG, "service created");
-
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
     }
 
     @Override
     protected void onHandleIntent(Intent intent) {
-
-        Log.v(TAG, "intent received");
-
         GeofencingEvent geofencingEvent = GeofencingEvent.fromIntent(intent);
 
         // Get the transition type.

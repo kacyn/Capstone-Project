@@ -12,7 +12,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.widget.Toast;
 
 /**
- * Created by kacyn on 12/18/15.
+ * Created by kacyn on 12/18/15.  Credit to Google Location sample code for helper utils
  */
 public abstract class PermissionUtils {
 
