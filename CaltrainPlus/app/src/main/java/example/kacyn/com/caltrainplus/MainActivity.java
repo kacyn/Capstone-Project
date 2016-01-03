@@ -2,7 +2,6 @@ package example.kacyn.com.caltrainplus;
 
 import android.Manifest;
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.LoaderManager;
 import android.content.ContentValues;
@@ -111,6 +110,7 @@ public class MainActivity extends AppCompatActivity implements
             }
         });
 
+        //store result of notification toggle
         ToggleButton notificationButton = (ToggleButton) findViewById(R.id.notification_toggle);
         notificationButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -119,11 +119,9 @@ public class MainActivity extends AppCompatActivity implements
 
                 if(isChecked) {
                     editor.putBoolean(getString(R.string.notification_key), true);
-                    Log.v(TAG, "notifications on");
                 }
                 else {
                     editor.putBoolean(getString(R.string.notification_key), false);
-                    Log.v(TAG, "notifications off");
                 }
 
                 editor.apply();
@@ -132,6 +130,7 @@ public class MainActivity extends AppCompatActivity implements
 
         mStationSpinner = (Spinner) findViewById(R.id.station_spinner);
 
+        //set up listener for spinner selector
         if(mStationSpinner != null) {
             mStationSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override
@@ -192,11 +191,8 @@ public class MainActivity extends AppCompatActivity implements
             return;
         }
 
-        if (PermissionUtils.isPermissionGranted(permissions, grantResults,
+        if (!PermissionUtils.isPermissionGranted(permissions, grantResults,
                 Manifest.permission.ACCESS_FINE_LOCATION)) {
-            // Enable the my location layer if the permission has been granted.
-//            enableMyLocation();
-        } else {
             // Display the missing permission error dialog when the fragments resume.
             mPermissionDenied = true;
         }
@@ -221,9 +217,6 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     void startMapsActivity() {
-//        Intent mapsIntent = new Intent(this, MapsActivity.class);
-//        mapsIntent.putExtra(getString(R.string.geofence_location_key), )
-
         startActivity(new Intent(this, MapsActivity.class));
     }
 
@@ -262,15 +255,16 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
 
+        //enable button if the cursor isn't empty
         if(cursor.getCount() > 0) {
-            Log.v(TAG, "data loaded, enabling button");
             mMapsButton.setEnabled(true);
         }
+        //if the cursor is empty, create an error toast
         else {
-            //error toast
             Toast.makeText(this, getString(R.string.no_data_available), Toast.LENGTH_SHORT).show();
         }
 
+        //populate spinner
         SimpleCursorAdapter mSpinnerAdapter = new SimpleCursorAdapter(
                 this,
                 android.R.layout.simple_spinner_item,
@@ -280,9 +274,9 @@ public class MainActivity extends AppCompatActivity implements
                 );
         mSpinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
-
         mStationSpinner.setAdapter(mSpinnerAdapter);
 
+        //retrieve selected position from shared preferences
         int selectedPos = mPrefs.getInt(getString(R.string.station_position_key), -1);
 
         if(selectedPos != -1) {
@@ -367,10 +361,7 @@ public class MainActivity extends AppCompatActivity implements
     void parseStationXmlResponse(String stationXmlResponse)
             throws XmlPullParserException, IOException {
 
-
         final int NUM_STATIONS = 24;
-
-        Log.v(TAG, "in parse station data");
 
         XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
         factory.setNamespaceAware(true);
@@ -389,8 +380,6 @@ public class MainActivity extends AppCompatActivity implements
 
                     String name = xpp.getAttributeValue("", "name");
                     int code = Integer.parseInt(xpp.getAttributeValue("", "StopCode"));
-
-                    Log.v(TAG, "Name: " + name + " Stop code: " + code);
 
                     ContentValues stationValues = new ContentValues();
                     stationValues.put(StationEntry.COLUMN_STATION_NAME, name);
@@ -413,9 +402,8 @@ public class MainActivity extends AppCompatActivity implements
         }
         Log.v(TAG, "End document.  " + inserted + " inserted");
 
-
+        //store data loaded state in shared preferences
         if (inserted == NUM_STATIONS) {
-            Log.v(TAG, "24 stations inserted into db");
             SharedPreferences.Editor editor = mPrefs.edit();
             editor.putBoolean(getString(R.string.data_loaded_key), true);
             editor.apply();
