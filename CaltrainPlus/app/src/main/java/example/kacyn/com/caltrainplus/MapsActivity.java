@@ -4,6 +4,8 @@ import android.Manifest;
 import android.app.LoaderManager;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.appwidget.AppWidgetManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
@@ -130,12 +132,15 @@ public class MapsActivity extends AppCompatActivity implements
 
         createLocationRequest();
 
+        getLoaderManager().initLoader(STATION_LOADER, null, this);
         setUpMapIfNeeded();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+
+        getLoaderManager().restartLoader(STATION_LOADER, null, this);
         setUpMapIfNeeded();
 
         if (mGoogleApiClient.isConnected()) {
@@ -178,7 +183,7 @@ public class MapsActivity extends AppCompatActivity implements
             if (mMap != null) {
                 mMap.setOnMyLocationButtonClickListener(this);
                 enableMyLocation();
-                getLoaderManager().initLoader(STATION_LOADER, null, this);
+
             }
         }
     }
@@ -255,17 +260,30 @@ public class MapsActivity extends AppCompatActivity implements
             String stationName = c.getString(COL_STATION_NAME);
 
 //            Log.v(TAG, "lat: " + lat + " long: " + lng + " stationName: " + stationName);
+//
+//            mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lng)).title(stationName));
 
-            mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lng)).title(stationName));
+            if (stationName.equals(mDestination)) {
+                addDestinationMarker(lat, lng, stationName);
 
-            if(stationName.equals(mDestination)) {
                 Log.v(TAG, "destination: " + mDestination);
                 addGeofence(lat, lng);
                 mDestinationLat = lat;
                 mDestinationLng = lng;
 //                addGeofence(37.331687, -122.02646600);
+            } else {
+                mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lng)).title(stationName));
             }
         }
+    }
+
+    void addDestinationMarker(double lat, double lng, String stationName) {
+        IconGenerator iconGenerator = new IconGenerator(this);
+        iconGenerator.setStyle(IconGenerator.STYLE_GREEN);
+
+        mMap.addMarker(new MarkerOptions()
+                .position(new LatLng(lat, lng))
+                .icon(BitmapDescriptorFactory.fromBitmap(iconGenerator.makeIcon(stationName))));
     }
 
     private void addGeofence(double lat, double lng) {
@@ -281,17 +299,15 @@ public class MapsActivity extends AppCompatActivity implements
 
     }
 
-    private GeofencingRequest getGeofencingRequest(){
+    private GeofencingRequest getGeofencingRequest() {
         GeofencingRequest.Builder geoRequestBuilder = new GeofencingRequest.Builder();
-
         geoRequestBuilder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER);
         geoRequestBuilder.addGeofence(mGeofence);
-
         return geoRequestBuilder.build();
     }
 
     private PendingIntent getGeofencePendingIntent() {
-        if(mGeofencePendingIntent != null) {
+        if (mGeofencePendingIntent != null) {
             return mGeofencePendingIntent;
         }
 
@@ -331,15 +347,17 @@ public class MapsActivity extends AppCompatActivity implements
 
         PendingIntent pendingIntent = getGeofencePendingIntent();
 
-        if(pendingIntent == null) {
+        if (pendingIntent == null) {
             Log.v(TAG, "pending intent is null ");
         }
 
-        LocationServices.GeofencingApi.addGeofences(
-                mGoogleApiClient,
-                getGeofencingRequest(),
-                getGeofencePendingIntent())
-                .setResultCallback(this);
+        if (mGeofence != null) {
+            LocationServices.GeofencingApi.addGeofences(
+                    mGoogleApiClient,
+                    getGeofencingRequest(),
+                    getGeofencePendingIntent())
+                    .setResultCallback(this);
+        }
     }
 
     @Override
@@ -354,7 +372,7 @@ public class MapsActivity extends AppCompatActivity implements
 
     @Override
     public void onResult(Status status) {
-        if(status.isSuccess()) Log.v(TAG, "geofence successfully created");
+        if (status.isSuccess()) Log.v(TAG, "geofence successfully created");
     }
 
     @Override
@@ -364,15 +382,29 @@ public class MapsActivity extends AppCompatActivity implements
         float[] results = new float[1];
         Location.distanceBetween(mLastLocation.getLatitude(), mLastLocation.getLongitude(), mDestinationLat, mDestinationLng, results);
 
-        mDistancetoDestMiles = results[0]/1600;
+        mDistancetoDestMiles = results[0] / 1609;
 
         SharedPreferences.Editor editor = mPrefs.edit();
         editor.putFloat(getString(R.string.distance_key), mDistancetoDestMiles);
         editor.apply();
 
+        //update share intent
+        mShareActionProvider.setShareIntent(createShareIntent());
+
+        //update camera
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude()), DEFAULT_ZOOM_LEVEL));
+
+        //update widget
+        Intent widgetIntent = new Intent(this, InfoWidget.class);
+        widgetIntent.setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE);
+        int[] ids = AppWidgetManager.getInstance(this).getAppWidgetIds(new ComponentName(this, InfoWidget.class));
+        widgetIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids);
+        sendBroadcast(widgetIntent);
+
         Log.v(TAG, "location changed. lat: " + mLastLocation.getLatitude() + " long: " + mLastLocation.getLongitude() + " distance from dest in miles: " + mDistancetoDestMiles);
     }
 
+    //for share action provider
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_maps, menu);
@@ -380,11 +412,10 @@ public class MapsActivity extends AppCompatActivity implements
         MenuItem item = menu.findItem(R.id.action_share);
         mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
 
-        if(mShareActionProvider != null) {
+        if (mShareActionProvider != null) {
             mShareActionProvider.setShareIntent(createShareIntent());
             Log.v(TAG, "setting share intent");
-        }
-        else {
+        } else {
             Log.v(TAG, "share action provider is null");
         }
 
@@ -395,33 +426,8 @@ public class MapsActivity extends AppCompatActivity implements
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
         shareIntent.setType("text/plain");
-        shareIntent.putExtra(Intent.EXTRA_TEXT, "I am currently " + mDistancetoDestMiles + " mi away from " + mDestination);
+        shareIntent.putExtra(Intent.EXTRA_TEXT, "I am currently " + mDistancetoDestMiles + " mi away from the " + mDestination);
+
         return shareIntent;
     }
-
-    //    //make a separate asynctask to load the markers in a background thread
-//    public class LoadMarkers extends AsyncTask<Void, Void, Void> {
-//
-//        private Context mContext;
-//
-//        public LoadMarkers (Context context) {
-//            mContext = context;
-//        }
-//
-//        @Override
-//        protected Void doInBackground(Void... params) {
-//            LatLng latLng = new LatLng(37.443777, -122.1649696);
-//            IconGenerator iconGenerator = new IconGenerator(mContext);
-//            Bitmap iconBitmap = iconGenerator.makeIcon("Palo Alto");
-//
-//            return null;
-//        }
-//
-//        @Override
-//        protected void onPostExecute(Void aVoid) {
-//            super.onPostExecute(aVoid);
-//
-//        }
-//    }
-
 }

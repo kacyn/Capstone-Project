@@ -27,6 +27,7 @@
     <string name="station_position_key">station_position_key</string>
     <string name="notification_key">notification_key</string>
     <string name="distance_key">distance_key</string>
+    <string name="data_loaded_key">data_loaded_key</string>
 
     <!-- Intent key -->
     <string name="geofence_location_key">geofence_location_key</string>

@@ -100,8 +100,15 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             mStationSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override
                 public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                    TextView selectedView = (TextView) view.findViewById(android.R.id.text1);
-                    String selectedStation = selectedView.getText().toString();
+                    TextView selectedView = (TextView) findViewById(android.R.id.text1);
+
+                    String selectedStation;
+
+                    if (selectedView == null) {
+                        selectedStation = mPrefs.getString(getString(R.string.station_key), "");
+                    } else {
+                        selectedStation = selectedView.getText().toString();
+                    }
 
                     SharedPreferences.Editor editor = mPrefs.edit();
                     editor.putString(getString(R.string.station_key), selectedStation);
@@ -119,8 +126,16 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
 
 
-//        loadStationData(this);
-        new FetchStationData().execute();
+        boolean dataLoaded = mPrefs.getBoolean(getString(R.string.data_loaded_key), false);
+
+        //only load station data once
+        if(!dataLoaded) {
+            new FetchStationData().execute();
+
+            SharedPreferences.Editor editor = mPrefs.edit();
+            editor.putBoolean(getString(R.string.data_loaded_key), true);
+            editor.apply();
+        }
 
         getLoaderManager().initLoader(STATION_LOADER, null, this);
     }

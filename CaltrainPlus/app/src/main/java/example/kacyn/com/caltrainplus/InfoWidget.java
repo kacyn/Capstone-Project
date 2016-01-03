@@ -44,6 +44,8 @@ public class InfoWidget extends AppWidgetProvider {
         String destText = "Destination: " + prefs.getString(context.getString(R.string.station_key), "");
         String distanceText = "Distance away: " + prefs.getFloat(context.getString(R.string.distance_key), -1.0f);
 
+        Log.v("Map", "destination: " + destText + " distance: " + distanceText);
+
 //        CharSequence destText = context.getString(R.string.widget_dest);
 //        CharSequence distanceText = context.getString(R.string.widget_distance);
         // Construct the RemoteViews object
