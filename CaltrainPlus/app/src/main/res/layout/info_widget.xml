@@ -1,24 +1,51 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal"
     android:background="#ffffff"
     android:padding="@dimen/widget_margin">
 
-    <TextView
-        android:id="@+id/widget_dest_text"
+    <ImageView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="#ffffff"
-        android:textColor="#000000"
-        android:textSize="15sp"/>
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:layout_gravity="center"
+        android:src="@drawable/ic_directions_transit_black_24dp"/>
 
-    <TextView
-        android:id="@+id/widget_distance_text"
+    <LinearLayout
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="#ffffff"
-        android:textColor="#000000"
-        android:textSize="15sp"/>
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/widget_dest_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="2dp"
+            android:paddingEnd="2dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:background="#ffffff"
+            android:textColor="#000000"
+            android:textSize="15sp"/>
+
+        <TextView
+            android:id="@+id/widget_distance_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="2dp"
+            android:paddingEnd="2dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:background="#ffffff"
+            android:textColor="#000000"
+            android:textSize="15sp"/>
+
+    </LinearLayout>
+
+
 
 </LinearLayout>

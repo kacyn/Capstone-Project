@@ -64,7 +64,7 @@ public class GeofenceService extends IntentService {
         if(!destination.equals("")){
             NotificationCompat.Builder builder =
                     new NotificationCompat.Builder(this)
-                            .setSmallIcon(R.drawable.ic_media_play)
+                            .setSmallIcon(R.drawable.ic_directions_transit_black_24dp)
                             .setContentTitle(getString(R.string.notification_title))
                             .setContentText(destination);
 

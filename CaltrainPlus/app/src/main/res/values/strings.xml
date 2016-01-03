@@ -1,7 +1,6 @@
 <resources>
-    <string name="app_name">CaltrainPlus</string>
+    <string name="app_name">Caltrain Notifications</string>
 
-    <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="action_share">Share</string>
     <string name="title_activity_maps">Caltrain Map</string>
@@ -13,14 +12,14 @@
     <string name="location_permission_denied">This sample requires location permission to enable the \'my location\' layer. Please try again and grant access to use the location.\nIf the permission has been permanently denied, it can be enabled from the System Settings &gt; Apps &gt; \'Google Maps API Demos\'.</string>
     <string name="permission_required_toast">Location permission is required for this demo.</string>
 
-    <string name="app_info">Welcome to Caltrain Plus!  Just enter your destination station and
+    <string name="app_info">Welcome to Caltrain Notifications!  Just enter your destination station and
         you will get a notification when you are approaching your station.  You can also view your current
         location on the map once you select "Begin trip".
     </string>
 
     <string name="enter_destination">Select destination station: </string>
     <string name="button_text">Begin trip!</string>
-    <string name="arrival_notification_toggle">Arrival notification setting:</string>
+    <string name="arrival_notification_toggle">Turn arrival notifications on/off:</string>
 
     <!-- Shared preferences -->
     <string name="station_key" translatable="false">station_key</string>
