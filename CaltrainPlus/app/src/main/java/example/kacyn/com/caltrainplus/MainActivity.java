@@ -180,21 +180,8 @@ public class MainActivity extends AppCompatActivity implements
 
         //only load station data once
         if(!dataLoaded) {
-            Log.v(TAG, "data not loaded, calling fetch station data");
-
-            if(!mPrefs.getBoolean(getString(R.string.data_loaded_key), false)){
-                Log.v(TAG, "toast");
-
-                Toast.makeText(this, getString(R.string.no_data_available), Toast.LENGTH_LONG).show();
-            }
-
             new FetchStationData().execute();
         }
-        else {
-            Log.v(TAG, "data loaded, enabling button");
-            mMapsButton.setEnabled(true);
-        }
-
 
     }
 
@@ -274,9 +261,15 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-        Log.v(TAG, "data loaded, enabling button");
-        mMapsButton.setEnabled(true);
 
+        if(cursor.getCount() > 0) {
+            Log.v(TAG, "data loaded, enabling button");
+            mMapsButton.setEnabled(true);
+        }
+        else {
+            //error toast
+            Toast.makeText(this, getString(R.string.no_data_available), Toast.LENGTH_SHORT).show();
+        }
 
         SimpleCursorAdapter mSpinnerAdapter = new SimpleCursorAdapter(
                 this,
