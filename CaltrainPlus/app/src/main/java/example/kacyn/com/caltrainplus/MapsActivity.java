@@ -2,39 +2,27 @@ package example.kacyn.com.caltrainplus;
 
 import android.Manifest;
 import android.app.LoaderManager;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.graphics.Bitmap;
 import android.location.Location;
-import android.net.Uri;
-import android.os.AsyncTask;
+import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentActivity;
-import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v4.app.NotificationCompat;
 import android.support.v7.widget.ShareActionProvider;
 import android.util.Log;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.View;
-
-import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -47,16 +35,11 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.ui.IconGenerator;
-
-
-import java.util.ArrayList;
 
 import example.kacyn.com.caltrainplus.data.StationContract.StationEntry;
 import example.kacyn.com.caltrainplus.data.StationDbHelper;
@@ -77,6 +60,7 @@ public class MapsActivity extends AppCompatActivity implements
     private static final int DEFAULT_ZOOM_LEVEL = 10;
     public static final long LOCATION_UPDATE_INTERVAL_MS = 10000;
     public static final long FASTEST_LOCATION_UPDATE_INTERVAL_MS = LOCATION_UPDATE_INTERVAL_MS / 2;
+    public static final int NUM_METERS_IN_MILE = 1609;
 
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
 
@@ -115,7 +99,6 @@ public class MapsActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
-
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
         mDestination = mPrefs.getString(getString(R.string.station_key), "");
         mDbHelper = new StationDbHelper(this);
@@ -123,6 +106,7 @@ public class MapsActivity extends AppCompatActivity implements
         //initialize pending intent
         mGeofencePendingIntent = null;
 
+        //set up google services client
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
@@ -147,22 +131,8 @@ public class MapsActivity extends AppCompatActivity implements
         }
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        // Stop location updates to save battery, but don't disconnect the GoogleApiClient object.
-        if (mGoogleApiClient.isConnected()) {
-            //stopLocationUpdates();
-        }
-    }
-
     protected void startLocationUpdates() {
-        Log.v(TAG, "starting location updates");
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
-    }
-
-    protected void stopLocationUpdates() {
-        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
     }
 
     protected void createLocationRequest() {
@@ -181,20 +151,17 @@ public class MapsActivity extends AppCompatActivity implements
             // Check if we were successful in obtaining the map.
             if (mMap != null) {
                 enableMyLocation();
-
             }
         }
     }
 
+    //check for permissions
     private void enableMyLocation() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
             // Permission to access the location is missing.
             PermissionUtils.requestPermission(this, LOCATION_PERMISSION_REQUEST_CODE,
                     Manifest.permission.ACCESS_FINE_LOCATION, true);
-        } else if (mMap != null) {
-            // Access to the location has been granted to the app.
-//            mMap.setMyLocationEnabled(true);
         }
     }
 
@@ -225,9 +192,7 @@ public class MapsActivity extends AppCompatActivity implements
         }
     }
 
-    /**
-     * Displays a dialog with error message explaining that the location permission is missing.
-     */
+     //Displays a dialog with error message explaining that the location permission is missing.
     private void showMissingPermissionError() {
         PermissionUtils.PermissionDeniedDialog
                 .newInstance(true).show(getSupportFragmentManager(), "dialog");
@@ -250,18 +215,14 @@ public class MapsActivity extends AppCompatActivity implements
             double lng = c.getDouble(COL_STATION_LNG);
             String stationName = c.getString(COL_STATION_NAME);
 
-//            Log.v(TAG, "lat: " + lat + " long: " + lng + " stationName: " + stationName);
-//
-//            mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lng)).title(stationName));
-
+            //add a customized marker for the destination and set up geofence
             if (stationName.equals(mDestination)) {
                 addDestinationMarker(lat, lng, stationName);
 
-                Log.v(TAG, "destination: " + mDestination);
-                addGeofence(lat, lng);
                 mDestinationLat = lat;
                 mDestinationLng = lng;
-//                addGeofence(37.331687, -122.02646600);
+
+                addGeofence(mDestinationLat, mDestinationLng);
             } else {
                 mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lng)).title(stationName));
             }
@@ -279,7 +240,6 @@ public class MapsActivity extends AppCompatActivity implements
     }
 
     private void addGeofence(double lat, double lng) {
-
         Log.v(TAG, "geofence created at lat: " + lat + " long: " + lng);
 
         mGeofence = new Geofence.Builder()
@@ -288,7 +248,6 @@ public class MapsActivity extends AppCompatActivity implements
                 .setExpirationDuration(GEOFENCE_EXPIRATION_MS)
                 .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
                 .build();
-
     }
 
     private GeofencingRequest getGeofencingRequest() {
@@ -303,7 +262,7 @@ public class MapsActivity extends AppCompatActivity implements
             return mGeofencePendingIntent;
         }
 
-        Log.v(TAG, "Creating new geofence service");
+        //creating new geofence service
         Intent intent = new Intent(this, GeofenceService.class);
         return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
@@ -374,7 +333,8 @@ public class MapsActivity extends AppCompatActivity implements
         float[] results = new float[1];
         Location.distanceBetween(mLastLocation.getLatitude(), mLastLocation.getLongitude(), mDestinationLat, mDestinationLng, results);
 
-        mDistancetoDestMiles = results[0] / 1609;
+        //keep track of distance to destination
+        mDistancetoDestMiles = results[0] / NUM_METERS_IN_MILE;
 
         SharedPreferences.Editor editor = mPrefs.edit();
         editor.putFloat(getString(R.string.distance_key), mDistancetoDestMiles);
@@ -414,6 +374,7 @@ public class MapsActivity extends AppCompatActivity implements
         return true;
     }
 
+    //share user's distance to destination
     private Intent createShareIntent() {
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
