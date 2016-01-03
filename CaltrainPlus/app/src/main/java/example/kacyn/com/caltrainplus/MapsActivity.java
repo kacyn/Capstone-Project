@@ -194,7 +194,7 @@ public class MapsActivity extends AppCompatActivity implements
                     Manifest.permission.ACCESS_FINE_LOCATION, true);
         } else if (mMap != null) {
             // Access to the location has been granted to the app.
-            mMap.setMyLocationEnabled(true);
+//            mMap.setMyLocationEnabled(true);
         }
     }
 
