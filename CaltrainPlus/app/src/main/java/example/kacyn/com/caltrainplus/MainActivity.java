@@ -1,16 +1,21 @@
 package example.kacyn.com.caltrainplus;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.LoaderManager;
 import android.content.ContentValues;
 import android.content.CursorLoader;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.Loader;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -74,6 +79,27 @@ public class MainActivity extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //request necessary permissions for Android 6.0
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (this.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle("This app needs location access");
+                builder.setMessage("Please grant location access to enable arrival notifications.");
+                builder.setPositiveButton(android.R.string.ok, null);
+                builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+
+                    @TargetApi(23)
+                    @Override
+                    public void onDismiss(DialogInterface dialog) {
+                        requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                                LOCATION_PERMISSION_REQUEST_CODE);
+                    }
+
+                });
+                builder.show();
+            }
+        }
 
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -141,10 +167,6 @@ public class MainActivity extends AppCompatActivity implements
             Log.v(TAG, "data not loaded, calling fetch station data");
 
             new FetchStationData().execute();
-        }
-        else {
-            Log.v(TAG, "data loaded, enabling button");
-            mMapsButton.setEnabled(true);
         }
 
         getLoaderManager().initLoader(STATION_LOADER, null, this);
@@ -252,6 +274,10 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        Log.v(TAG, "data loaded, enabling button");
+        mMapsButton.setEnabled(true);
+
+
         SimpleCursorAdapter mSpinnerAdapter = new SimpleCursorAdapter(
                 this,
                 android.R.layout.simple_spinner_item,

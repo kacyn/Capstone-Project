@@ -62,7 +62,6 @@ import example.kacyn.com.caltrainplus.data.StationContract.StationEntry;
 import example.kacyn.com.caltrainplus.data.StationDbHelper;
 
 public class MapsActivity extends AppCompatActivity implements
-        GoogleMap.OnMyLocationButtonClickListener,
         ActivityCompat.OnRequestPermissionsResultCallback,
         LoaderManager.LoaderCallbacks<Cursor>,
         GoogleApiClient.ConnectionCallbacks,
@@ -181,18 +180,10 @@ public class MapsActivity extends AppCompatActivity implements
                     .getMap();
             // Check if we were successful in obtaining the map.
             if (mMap != null) {
-                mMap.setOnMyLocationButtonClickListener(this);
                 enableMyLocation();
 
             }
         }
-    }
-
-    @Override
-    public boolean onMyLocationButtonClick() {
-        Toast.makeText(this, "My location clicked", Toast.LENGTH_SHORT).show();
-
-        return false;
     }
 
     private void enableMyLocation() {
