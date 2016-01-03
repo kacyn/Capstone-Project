@@ -1,5 +1,6 @@
 package example.kacyn.com.caltrainplus;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.LoaderManager;
 import android.content.ContentValues;
@@ -11,6 +12,8 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -43,7 +46,9 @@ import java.util.Vector;
 
 import example.kacyn.com.caltrainplus.data.StationContract.StationEntry;
 
-public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+public class MainActivity extends AppCompatActivity implements
+        LoaderManager.LoaderCallbacks<Cursor>,
+        ActivityCompat.OnRequestPermissionsResultCallback {
 
     public static String TAG = MainActivity.class.getSimpleName();
 
@@ -57,8 +62,13 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     static final int COL_STATION_ID = 0;
     static final int COL_STATION_NAME = 1;
 
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
+
     SharedPreferences mPrefs;
     Spinner mStationSpinner;
+    Button mMapsButton;
+
+    private boolean mPermissionDenied = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,8 +77,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
 
-        Button button = (Button) findViewById(R.id.maps_button);
-        button.setOnClickListener(new View.OnClickListener() {
+        mMapsButton = (Button) findViewById(R.id.maps_button);
+        mMapsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 startMapsActivity();
@@ -124,20 +134,81 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         }
 
+        boolean dataLoaded = mPrefs.getBoolean(getString(R.string.data_loaded_key), false);
 
+        //only load station data once
+        if(!dataLoaded) {
+            Log.v(TAG, "data not loaded, calling fetch station data");
+
+            new FetchStationData().execute();
+        }
+        else {
+            Log.v(TAG, "data loaded, enabling button");
+            mMapsButton.setEnabled(true);
+        }
+
+        getLoaderManager().initLoader(STATION_LOADER, null, this);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
 
         boolean dataLoaded = mPrefs.getBoolean(getString(R.string.data_loaded_key), false);
 
         //only load station data once
         if(!dataLoaded) {
-            new FetchStationData().execute();
+            Log.v(TAG, "data not loaded, calling fetch station data");
 
-            SharedPreferences.Editor editor = mPrefs.edit();
-            editor.putBoolean(getString(R.string.data_loaded_key), true);
-            editor.apply();
+            if(!mPrefs.getBoolean(getString(R.string.data_loaded_key), false)){
+                Log.v(TAG, "toast");
+
+                Toast.makeText(this, getString(R.string.no_data_available), Toast.LENGTH_LONG).show();
+            }
+
+            new FetchStationData().execute();
+        }
+        else {
+            Log.v(TAG, "data loaded, enabling button");
+            mMapsButton.setEnabled(true);
         }
 
-        getLoaderManager().initLoader(STATION_LOADER, null, this);
+
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        if (requestCode != LOCATION_PERMISSION_REQUEST_CODE) {
+            return;
+        }
+
+        if (PermissionUtils.isPermissionGranted(permissions, grantResults,
+                Manifest.permission.ACCESS_FINE_LOCATION)) {
+            // Enable the my location layer if the permission has been granted.
+//            enableMyLocation();
+        } else {
+            // Display the missing permission error dialog when the fragments resume.
+            mPermissionDenied = true;
+        }
+    }
+
+    @Override
+    protected void onResumeFragments() {
+        super.onResumeFragments();
+        if (mPermissionDenied) {
+            // Permission was not granted, display error dialog.
+            showMissingPermissionError();
+            mPermissionDenied = false;
+        }
+    }
+
+    /**
+     * Displays a dialog with error message explaining that the location permission is missing.
+     */
+    private void showMissingPermissionError() {
+        PermissionUtils.PermissionDeniedDialog
+                .newInstance(true).show(getSupportFragmentManager(), "dialog");
     }
 
     void startMapsActivity() {
@@ -324,5 +395,11 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         Log.v(TAG, "End document.  " + inserted + " inserted");
 
 
+        if (inserted == NUM_STATIONS) {
+            Log.v(TAG, "24 stations inserted into db");
+            SharedPreferences.Editor editor = mPrefs.edit();
+            editor.putBoolean(getString(R.string.data_loaded_key), true);
+            editor.apply();
+        }
     }
 }

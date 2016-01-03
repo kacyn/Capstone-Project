@@ -23,15 +23,15 @@
     <string name="arrival_notification_toggle">Arrival notification setting:</string>
 
     <!-- Shared preferences -->
-    <string name="station_key">station_key</string>
-    <string name="station_position_key">station_position_key</string>
-    <string name="notification_key">notification_key</string>
-    <string name="distance_key">distance_key</string>
-    <string name="data_loaded_key">data_loaded_key</string>
+    <string name="station_key" translatable="false">station_key</string>
+    <string name="station_position_key" translatable="false">station_position_key</string>
+    <string name="notification_key" translatable="false">notification_key</string>
+    <string name="distance_key" translatable="false">distance_key</string>
+    <string name="data_loaded_key" translatable="false">data_loaded_key</string>
 
     <!-- Intent key -->
-    <string name="geofence_location_key">geofence_location_key</string>
-    <string name="geofence_request_id">destination_request_id</string>
+    <string name="geofence_location_key" translatable="false">geofence_location_key</string>
+    <string name="geofence_request_id" translatable="false">destination_request_id</string>
 
     <!-- For notification -->
     <string name="notification_title">Approaching destination:</string>
@@ -40,5 +40,10 @@
     <string name="widget_dest">Destination: Mountain View Caltrain Station</string>
     <string name="widget_distance">Distance away: 3.2 mi</string>
     <string name="add_widget">Add widget</string>
+
+    <!-- For content descriptions -->
+    <string name="notification_toggle">Toggle notifications</string>
+
+    <string name="no_data_available">Unable to retrieve station data.  Please check your network connection.</string>
 
 </resources>

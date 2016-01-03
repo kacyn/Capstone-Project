@@ -153,7 +153,7 @@ public class MapsActivity extends AppCompatActivity implements
         super.onPause();
         // Stop location updates to save battery, but don't disconnect the GoogleApiClient object.
         if (mGoogleApiClient.isConnected()) {
-            stopLocationUpdates();
+            //stopLocationUpdates();
         }
     }
 
@@ -283,6 +283,7 @@ public class MapsActivity extends AppCompatActivity implements
 
         mMap.addMarker(new MarkerOptions()
                 .position(new LatLng(lat, lng))
+                .title(stationName)
                 .icon(BitmapDescriptorFactory.fromBitmap(iconGenerator.makeIcon(stationName))));
     }
 

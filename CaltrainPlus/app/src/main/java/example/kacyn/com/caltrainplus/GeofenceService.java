@@ -45,13 +45,15 @@ public class GeofenceService extends IntentService {
         // Get the transition type.
         int geofenceTransition = geofencingEvent.getGeofenceTransition();
 
-        sendNotification();
-
         // Test that the reported transition was of interest.
         if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER) {
             Log.v(TAG, "region entered");
             // Send notification
-            sendNotification();
+            boolean notificationsOn = mPrefs.getBoolean(getString(R.string.notification_key), true);
+
+            if(notificationsOn) {
+                sendNotification();
+            }
         }
     }
 
