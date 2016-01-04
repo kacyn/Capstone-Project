@@ -14,7 +14,7 @@ android {
 
     signingConfigs {
         release {
-            storeFile file("/Users/kacyn/Documents/workspace/nano/Capstone-Project/keystore.jks")
+            storeFile file("keystore.jks")
             storePassword "udacityRocks!"
             keyAlias "kacyn_keystore"
             keyPassword "udacityRocks!"
