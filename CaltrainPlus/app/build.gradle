@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "example.kacyn.com.caltrainplus"
-        minSdkVersion 17
+        minSdkVersion 22
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"
@@ -24,5 +24,6 @@ dependencies {
     compile 'com.android.support:appcompat-v7:23.1.1'
     compile 'com.google.android.gms:play-services:8.3.0'
     compile 'com.google.maps.android:android-maps-utils:0.4+'
+    compile 'com.android.support:design:23.1.1'
 }
 

@@ -20,6 +20,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.ShareActionProvider;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -98,6 +99,8 @@ public class MapsActivity extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_maps);
+        setSupportActionBar(toolbar);
 
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
         mDestination = mPrefs.getString(getString(R.string.station_key), "");
@@ -151,6 +154,7 @@ public class MapsActivity extends AppCompatActivity implements
             // Check if we were successful in obtaining the map.
             if (mMap != null) {
                 enableMyLocation();
+                mMap.setMyLocationEnabled(true);
             }
         }
     }
@@ -341,7 +345,10 @@ public class MapsActivity extends AppCompatActivity implements
         editor.apply();
 
         //update share intent
-        mShareActionProvider.setShareIntent(createShareIntent());
+
+        if(mShareActionProvider != null) {
+            mShareActionProvider.setShareIntent(createShareIntent());
+        }
 
         //update camera
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude()), DEFAULT_ZOOM_LEVEL));
@@ -372,6 +379,21 @@ public class MapsActivity extends AppCompatActivity implements
         }
 
         return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_share) {
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     //share user's distance to destination
